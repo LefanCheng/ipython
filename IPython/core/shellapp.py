@@ -160,7 +160,13 @@ class InteractiveShellApp(Configurable):
         if new:
             # add to self.extensions
             self.extensions.append(new)
-    
+
+    exit_on_extension_load_failure = Bool(
+        False,
+        config=True,
+        help="If True, exit on failure to load any extensions.",
+    )
+
     # Extensions that are always loaded (not configurable)
     default_extensions = List(Unicode, [u'storemagic'], config=False)
     
@@ -278,13 +284,18 @@ class InteractiveShellApp(Configurable):
                     self.log.info("Loading IPython extension: %s" % ext)
                     self.shell.extension_manager.load_extension(ext)
                 except:
-                    self.log.warn("Error in loading extension: %s" % ext +
-                        "\nCheck your config files in %s" % self.profile_dir.location
-                    )
-                    self.shell.showtraceback()
+                    if self.exit_on_extension_load_failure:
+                        raise
+                    msg = ("Error in loading extension: {ext}\n"
+                           "Check your config files in {location}".format(
+                               ext=ext,
+                               location=self.profile_dir.location
+                           ))
+                    self.log.warn(msg, exc_info=True)
         except:
-            self.log.warn("Unknown error in loading extensions:")
-            self.shell.showtraceback()
+            if self.exit_on_extension_load_failure:
+                raise
+            self.log.warn("Unknown error in loading extensions:", exc_info=True)
 
     def init_code(self):
         """run the pre-flight code, specified via exec_lines"""
