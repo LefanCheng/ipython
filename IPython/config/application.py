@@ -22,7 +22,7 @@ from IPython.config.loader import (
 )
 
 from IPython.utils.traitlets import (
-    Unicode, List, Enum, Dict, Instance, TraitError
+    Unicode, List, Enum, Dict, Instance, TraitError, Type,
 )
 from IPython.utils.importstring import import_item
 from IPython.utils.text import indent, wrap_paragraphs, dedent
@@ -166,10 +166,43 @@ class Application(SingletonConfigurable):
     )
     def _log_format_changed(self, name, old, new):
         """Change the log formatter when log_format is set."""
-        _log_handler = self.log.handlers[0]
-        _log_formatter = self._log_formatter_cls(fmt=new, datefmt=self.log_datefmt)
-        _log_handler.setFormatter(_log_formatter)
-    
+        self._set_log_format(new, self.log.handlers[0])
+
+    def _set_log_format(self, fmt, handler):
+        handler.setFormatter(
+            self._log_formatter_cls(fmt=new, datefmt=self.log_datefmt)
+        )
+
+    log_file = Unicode(default_value=None, allow_none=True, config=True)
+    def _log_file_changed(self, name, old, new):
+        self.log.handlers[0] = self._log_handler_default()
+
+    log_handler = Instance(logging.Handler, config=True)
+
+    def _log_handler_default(self):
+        return self._get_handler()
+
+    def _set_log_handler(self, logger):
+        logger.setHandler(self._get_handler())
+
+    def _get_handler(self):
+        if self.log_file is None:
+            if sys.executable.endswith('pythonw.exe'):
+                # this should really go to a file, but file-logging is only
+                # hooked up in parallel applications
+                handler = logging.StreamHandler(open(os.devnull, 'w'))
+            else:
+                handler = logging.StreamHandler()
+        else:
+            handler = logging.FileHandler(filename=self.log_file)
+
+        handler.setFormatter(
+            self._log_formatter_cls(
+                fmt=self.log_format,
+                datefmt=self.log_datefmt,
+            )
+        )
+        return handler
 
     log = Instance(logging.Logger)
     def _log_default(self):
@@ -190,15 +223,8 @@ class Application(SingletonConfigurable):
                 break
             else:
                 _log = _log.parent
-        if sys.executable.endswith('pythonw.exe'):
-            # this should really go to a file, but file-logging is only
-            # hooked up in parallel applications
-            _log_handler = logging.StreamHandler(open(os.devnull, 'w'))
-        else:
-            _log_handler = logging.StreamHandler()
-        _log_formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
-        _log_handler.setFormatter(_log_formatter)
-        log.addHandler(_log_handler)
+
+        self._set_log_handler(_log)
         return log
 
     # the alias map for configurables
