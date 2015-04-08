@@ -38,14 +38,18 @@ class IPythonKernel(KernelBase):
 
     def __init__(self, **kwargs):
         super(IPythonKernel, self).__init__(**kwargs)
+        self.log.info("IPythonKernel Constructor")
 
         # Initialize the InteractiveShell subclass
+        self.log.info("Creating shell instance")
         self.shell = self.shell_class.instance(parent=self,
             profile_dir = self.profile_dir,
             user_module = self.user_module,
             user_ns     = self.user_ns,
-            kernel      = self,
+                                               kernel      = self, log=self.log,
+
         )
+        self.log.info("Finished shell instance")
         self.shell.displayhook.session = self.session
         self.shell.displayhook.pub_socket = self.iopub_socket
         self.shell.displayhook.topic = self._topic('execute_result')
@@ -57,14 +61,17 @@ class IPythonKernel(KernelBase):
         # TMP - hack while developing
         self.shell._reply_content = None
 
+        self.log.info("Creating CommManager")
         self.comm_manager = CommManager(shell=self.shell, parent=self, 
                                         kernel=self)
         self.comm_manager.register_target('ipython.widget', Widget.handle_comm_opened)
+        self.log.info("Finished constructing CommManager")
 
         self.shell.configurables.append(self.comm_manager)
         comm_msg_types = [ 'comm_open', 'comm_msg', 'comm_close' ]
         for msg_type in comm_msg_types:
             self.shell_handlers[msg_type] = getattr(self.comm_manager, msg_type)
+        self.log.info("Finished IPythonKernel Constructor")
 
     # Kernel info fields
     implementation = 'ipython'

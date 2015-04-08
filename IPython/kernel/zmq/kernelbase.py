@@ -112,6 +112,7 @@ class Kernel(SingletonConfigurable):
 
     def __init__(self, **kwargs):
         super(Kernel, self).__init__(**kwargs)
+        self.log.info("KernelBase Constructor")
 
         # Build dict of handlers for message types
         msg_types = [ 'execute_request', 'complete_request',
@@ -128,6 +129,7 @@ class Kernel(SingletonConfigurable):
         self.control_handlers = {}
         for msg_type in control_msg_types:
             self.control_handlers[msg_type] = getattr(self, msg_type)
+        self.log.info("Exit KernelBase Constructor")
 
     
     def dispatch_control(self, msg):

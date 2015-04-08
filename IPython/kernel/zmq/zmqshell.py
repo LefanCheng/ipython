@@ -460,6 +460,7 @@ class ZMQInteractiveShell(InteractiveShell):
         """Configure the user's environment.
 
         """
+        self.log.info("init_environment")
         env = os.environ
         # These two ensure 'ls' produces nice coloring on BSD-derived systems
         env['TERM'] = 'xterm-color'
@@ -472,6 +473,7 @@ class ZMQInteractiveShell(InteractiveShell):
         
         # And install the payload version of page.
         install_payload_page()
+        self.log.info("END init_environment")
 
     def auto_rewrite_input(self, cmd):
         """Called to show the auto-rewritten input for autocall and friends.
@@ -559,9 +561,11 @@ class ZMQInteractiveShell(InteractiveShell):
     #-------------------------------------------------------------------------
 
     def init_magics(self):
+        self.log.info("init magics")
         super(ZMQInteractiveShell, self).init_magics()
         self.register_magics(KernelMagics)
         self.magics_manager.register_alias('ed', 'edit')
+        self.log.info("END init magics")
 
 
 InteractiveShellABC.register(ZMQInteractiveShell)

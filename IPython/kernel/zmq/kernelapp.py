@@ -180,6 +180,7 @@ class IPKernelApp(BaseIPythonApplication, InteractiveShellApp,
         write_connection_file(cf, ip=self.ip, key=self.session.key, transport=self.transport,
         shell_port=self.shell_port, stdin_port=self.stdin_port, hb_port=self.hb_port,
         iopub_port=self.iopub_port, control_port=self.control_port)
+        self.log.debug("Finished writing connection file: %s", cf)
     
     def cleanup_connection_file(self):
         cf = self.abs_connection_file
@@ -304,6 +305,7 @@ class IPKernelApp(BaseIPythonApplication, InteractiveShellApp,
         
         kernel_factory = self.kernel_class.instance
 
+        self.log.info("Creating kernel")
         kernel = kernel_factory(parent=self, session=self.session,
                                 shell_streams=[shell_stream, control_stream],
                                 iopub_socket=self.iopub_socket,
@@ -312,7 +314,9 @@ class IPKernelApp(BaseIPythonApplication, InteractiveShellApp,
                                 profile_dir=self.profile_dir,
                                 user_ns=self.user_ns,
         )
+        self.log.info("Finished creating kernel")
         kernel.record_ports(self.ports)
+        self.log.info("Recorded ports")
         self.kernel = kernel
 
     def init_gui_pylab(self):
@@ -344,27 +348,35 @@ class IPKernelApp(BaseIPythonApplication, InteractiveShellApp,
 
     @catch_config_error
     def initialize(self, argv=None):
+        import logging
+        date_fmt = "%Y-%m-%d %H:%M:%S %z"
+        log_fmt = ("[%(asctime)s] [%(module)s:%(lineno)d] "
+                   "[%(levelname)s] [%(name)s] %(message)s")
+        formatter = logging.Formatter(log_fmt, datefmt=date_fmt)
+        self.log.handlers[0].setFormatter(formatter)
+        self.log.setLevel(10)
+        self.log.info("test")
         super(IPKernelApp, self).initialize(argv)
         default_secure(self.config)
-        self.init_blackhole()
-        self.init_connection_file()
-        self.init_poller()
-        self.init_sockets()
-        self.init_heartbeat()
+        self.init_blackhole(); self.log.info('self.init_blackhole()')
+        self.init_connection_file(); self.log.info('self.init_connection_file()')
+        self.init_poller(); self.log.info('self.init_poller()')
+        self.init_sockets(); self.log.info('self.init_sockets()')
+        self.init_heartbeat(); self.log.info('self.init_heartbeat()')
         # writing/displaying connection info must be *after* init_sockets/heartbeat
-        self.log_connection_info()
-        self.write_connection_file()
-        self.init_io()
-        self.init_signal()
-        self.init_kernel()
+        self.log_connection_info(); self.log.info('self.log_connection_info()')
+        self.write_connection_file(); self.log.info('self.write_connection_file()')
+        self.init_io(); self.log.info('self.init_io()')
+        self.init_signal(); self.log.info('self.init_signal()')
+        self.init_kernel(); self.log.info('self.init_kernel()')
         # shell init steps
-        self.init_path()
-        self.init_shell()
+        self.init_path(); self.log.info('self.init_path()')
+        self.init_shell(); self.log.info('self.init_shell()')
         if self.shell:
-            self.init_gui_pylab()
-            self.init_extensions()
-            self.init_code()
-        # flush stdout/stderr, so that anything written to these streams during
+            self.init_gui_pylab(); self.log.info('self.init_gui_pylab()')
+            self.init_extensions(); self.log.info('self.init_extensions()')
+            self.init_code(); self.log.info('self.init_code()')
+            # flush stdout/stderr, so that anything written to these streams during
         # initialization do not get associated with the first execution request
         sys.stdout.flush()
         sys.stderr.flush()
